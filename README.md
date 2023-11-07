@@ -1,4 +1,4 @@
-## Sechat
+## Chax
 Chat but for nerds 🤓
 
 - Structure
