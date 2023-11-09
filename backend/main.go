@@ -29,7 +29,7 @@ func main() {
 		// Get the token from the header
 		tokenString := c.Get("Authorization")
 		if tokenString == "" {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "No token provided",
 			})
@@ -40,7 +40,7 @@ func main() {
 		})
 
 		if err != nil {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Invalid token",
 			})
@@ -50,7 +50,7 @@ func main() {
 		var user schema.User
 
 		if err := db.Where("id = ?", claims["id"]).First(&user).Error; err != nil {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Invalid token",
 			})
@@ -67,17 +67,20 @@ func main() {
 		}
 
 		if err := c.BodyParser(&Body); err != nil {
-			return err
+			return c.Status(400).JSON(&fiber.Map{
+				"success": false,
+				"error":   err,
+			})
 		}
 		var user schema.User
 		if err := db.Where("username = ?", Body.Username).First(&user).Error; err != nil {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Invalid username or password",
 			})
 		}
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(Body.Password)); err != nil {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Invalid username or password",
 			})
@@ -88,7 +91,10 @@ func main() {
 		})
 		tokenString, err := token.SignedString([]byte("secret"))
 		if err != nil {
-			return err
+			return c.Status(400).JSON(&fiber.Map{
+				"success": false,
+				"error":   err,
+			})
 		}
 
 		return c.JSON(&fiber.Map{
@@ -104,24 +110,27 @@ func main() {
 		}
 
 		if err := c.BodyParser(&Body); err != nil {
-			return err
+			return c.Status(400).JSON(&fiber.Map{
+				"success": false,
+				"error":   err,
+			})
 		}
 		// Verify that the username exists
 		if len(Body.Username) < 3 {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Username must be at least 3 characters long",
 			})
 		}
 		// Verify that the password exists
 		if len(Body.Password) < 6 {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Password must be at least 6 characters long",
 			})
 		}
 		if strings.Contains(strings.TrimSpace(Body.Username), " ") {
-			return c.JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
 				"message": "Username cannot contain spaces",
 			})
@@ -129,8 +138,9 @@ func main() {
 		// Encrypt the password
 		pass, err := bcrypt.GenerateFromPassword([]byte(Body.Password), 10)
 		if err != nil {
-			return c.Status(500).JSON(&fiber.Map{
+			return c.Status(400).JSON(&fiber.Map{
 				"success": false,
+				"error":   err,
 			})
 		}
 		user := schema.User{
@@ -139,7 +149,10 @@ func main() {
 		}
 
 		if err := db.Create(&user).Error; err != nil {
-			return err
+			return c.Status(400).JSON(&fiber.Map{
+				"success": false,
+				"error":   err,
+			})
 		}
 		// Generate a token
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -147,7 +160,10 @@ func main() {
 		})
 		tokenString, err := token.SignedString([]byte("secret"))
 		if err != nil {
-			return err
+			return c.Status(400).JSON(&fiber.Map{
+				"success": false,
+				"error":   err,
+			})
 		}
 
 		return c.JSON(&fiber.Map{
