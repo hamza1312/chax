@@ -2,19 +2,22 @@ package main
 
 import (
 	// "fmt"
-	"strconv"
-	"encoding/json"
-	"golang.org/x/crypto/ssh/terminal"
+	// "strconv"
+	// "encoding/json"
+
+	// "golang.org/x/crypto/ssh/terminal"
+	// "github.com/kopoli/go-terminal-size"
+	"golang.org/x/term"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/gofiber/fiber/v2"
+	// "github.com/gofiber/fiber/v2"
 )
 
 type model struct {
 	message string
-	currentScreen string
-	screens [6]string
+	currentState string
+	states [4]string
 	cursor int
 }
 
@@ -37,15 +40,14 @@ var button = lipgloss.NewStyle().
 
 func initialModel() model {
 	return model{
-		screens: [...]string{
+		message: "",
+		states: [...]string{
 			"auth",
-			"register",
-			"login",
 			"servers",
 			"channels",
 			"channel",
 		},
-		currentScreen: "auth",
+		currentState: "auth",
 		cursor: 0,
 	}
 }
@@ -53,6 +55,14 @@ func initialModel() model {
 func (m model) Init() tea.Cmd {
   return nil
 }
+
+// TODO HTTP request handler
+// agent := fiber.Get("http://127.0.0.1:3000/");
+// statusCode, body, errs := agent.Bytes()
+// var reqBody ReqBody
+// json.Unmarshal(body, &reqBody)
+// str := strconv.Itoa(statusCode) + " " + strconv.FormatBool(reqBody.Status) + " " + strconv.Itoa(len(errs))
+// return model{message: str}, nil
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -62,21 +72,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return model{}, tea.Quit
 				
 				case "t":
-					agent := fiber.Get("http://127.0.0.1:3000/");
-					statusCode, body, errs := agent.Bytes()
-					var reqBody ReqBody
-					json.Unmarshal(body, &reqBody)
-					str := strconv.Itoa(statusCode) + " " + strconv.FormatBool(reqBody.Status) + " " + strconv.Itoa(len(errs))
-					return model{message: str}, nil
 			}
   }
   return m, nil
 }
 
 func (m model) View() string {
-	switch m.currentScreen {
+	switch m.currentState {
 		case "auth":
-			w, h, e := terminal.GetSize(0)
+			w, h, e := term.GetSize(0)
 			if e == nil {
 				return lipgloss.Place(
 					w,
@@ -88,7 +92,7 @@ func (m model) View() string {
 						Background(lipgloss.Color("#4F9852")).
 						Padding(1,2,1,2).
 						BorderStyle(lipgloss.RoundedBorder()).
-						Render(m.screens[m.cursor]),
+						Render(m.states[m.cursor]),
 				)//selectedButton.Render("register")
 			}
 	}
