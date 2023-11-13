@@ -4,6 +4,7 @@ import (
 	// "fmt"
 	"strconv"
 	"encoding/json"
+	"golang.org/x/crypto/ssh/terminal"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -75,7 +76,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	switch m.currentScreen {
 		case "auth":
-			return selectedButton.Render("register")
+			w, h, e := terminal.GetSize(0)
+			if e == nil {
+				return lipgloss.Place(
+					w,
+					h,
+					lipgloss.Center,
+					lipgloss.Center,
+					lipgloss.NewStyle().
+						Foreground(lipgloss.Color("0")).
+						Background(lipgloss.Color("#4F9852")).
+						Padding(1,2,1,2).
+						BorderStyle(lipgloss.RoundedBorder()).
+						Render(m.screens[m.cursor]),
+				)//selectedButton.Render("register")
+			}
 	}
    return ""
 }
