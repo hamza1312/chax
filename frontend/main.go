@@ -8,6 +8,7 @@ import (
 	// "golang.org/x/crypto/ssh/terminal"
 	// "github.com/kopoli/go-terminal-size"
 	"os"
+	// "strings"
 
 	"golang.org/x/term"
 
@@ -17,7 +18,9 @@ import (
 )
 
 type model struct {
-	message      string
+	input        string
+	hint				 string
+	fullInput    string
 	currentState string
 	states       [4]string
 	cursor       int
@@ -42,7 +45,9 @@ var button = lipgloss.NewStyle().
 
 func initialModel() model {
 	return model{
-		message: "",
+		input: "",
+		hint: "",
+		fullInput: "",
 		states: [...]string{
 			"auth",
 			"servers",
@@ -56,6 +61,12 @@ func initialModel() model {
 
 func (m model) Init() tea.Cmd {
 	return nil
+}
+
+func (m model) addChar(char string) model {
+	m.input = m.input[:m.cursor] + char + m.input[m.cursor:]
+	m.cursor++
+	return m
 }
 
 // TODO HTTP request handler
@@ -73,7 +84,34 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return model{}, tea.Quit
 
-		case "t":
+		case "left":
+			if m.cursor > 0 {
+        m.cursor--
+      }
+      return m, nil
+
+    case "right":
+			if m.cursor < len(m.input) {
+        m.cursor++
+      }
+			return m, nil
+
+		case "backspace":
+			if m.cursor > 0 {
+        m.input = m.input[:m.cursor-1] + m.input[m.cursor:]
+        m.cursor--
+      }
+      return m, nil
+
+    case "delete":
+			if m.cursor < len(m.input) {
+        m.input = m.input[:m.cursor] + m.input[m.cursor+1:]
+      }
+			return m, nil
+
+		default:
+			m = m.addChar(msg.String())
+			return m, nil
 		}
 	}
 	return m, nil
@@ -94,8 +132,8 @@ func (m model) View() string {
 					Background(lipgloss.Color("#4F9852")).
 					Padding(1, 2, 1, 2).
 					BorderStyle(lipgloss.RoundedBorder()).
-					Render(m.states[m.cursor]),
-			) //selectedButton.Render("register")
+					Render(m.input),
+			)
 		}
 	}
 	return ""
