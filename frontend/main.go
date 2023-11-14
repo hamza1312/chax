@@ -11,6 +11,7 @@ import (
 	// "strings"
 
 	"golang.org/x/term"
+	"github.com/charmbracelet/bubbles/textinput"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,7 +19,7 @@ import (
 )
 
 type model struct {
-	input        string
+	input        textinput.Model
 	hint				 string
 	fullInput    string
 	currentState string
@@ -44,8 +45,11 @@ var button = lipgloss.NewStyle().
 	Padding(1, 2, 1, 2)
 
 func initialModel() model {
+	ti := textinput.New()
+	ti.Focus()
+
 	return model{
-		input: "",
+		input: ti,
 		hint: "",
 		fullInput: "",
 		states: [...]string{
@@ -60,16 +64,16 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
-func (m model) addChar(char string) model {
-	if (len(char) == 1) {
-		m.input = m.input[:m.cursor] + char + m.input[m.cursor:]
-		m.cursor++
-	}
-	return m
-}
+// func (m model) addChar(char string) model {
+// 	if (len(char) == 1) {
+// 		m.input = m.input[:m.cursor] + char + m.input[m.cursor:]
+// 		m.cursor++
+// 	}
+// 	return m
+// }
 
 // TODO HTTP request handler
 // agent := fiber.Get("http://127.0.0.1:3000/");
@@ -80,63 +84,74 @@ func (m model) addChar(char string) model {
 // return model{message: str}, nil
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
-			return model{}, tea.Quit
+			case "ctrl+c":
+				return model{}, tea.Quit
+			
+			case "enter":
+				m.input.SetValue("")
 
-		case "left":
-			if m.cursor > 0 {
-        m.cursor--
-      }
-      return m, nil
+		// case "left":
+		// 	if m.cursor > 0 {
+    //     m.cursor--
+    //   }
+    //   return m, nil
 
-    case "right":
-			if m.cursor < len(m.input) {
-        m.cursor++
-      }
-			return m, nil
+    // case "right":
+		// 	if m.cursor < len(m.input) {
+    //     m.cursor++
+    //   }
+		// 	return m, nil
 
-		case "backspace":
-			if m.cursor > 0 {
-        m.input = m.input[:m.cursor-1] + m.input[m.cursor:]
-        m.cursor--
-      }
-      return m, nil
+		// case "backspace":
+		// 	if m.cursor > 0 {
+    //     m.input = m.input[:m.cursor-1] + m.input[m.cursor:]
+    //     m.cursor--
+    //   }
+    //   return m, nil
 
-    case "delete":
-			if m.cursor < len(m.input) {
-        m.input = m.input[:m.cursor] + m.input[m.cursor+1:]
-      }
-			return m, nil
+    // case "delete":
+		// 	if m.cursor < len(m.input) {
+    //     m.input = m.input[:m.cursor] + m.input[m.cursor+1:]
+    //   }
+		// 	return m, nil
 
-		default:
-			m = m.addChar(msg.String())
-			return m, nil
+		// default:
+		// 	m = m.addChar(msg.String())
+		// 	return m, nil
 		}
 	}
-	return m, nil
+	m.input, cmd = m.input.Update(msg)
+	return m, cmd
 }
 
 func (m model) View() string {
-	switch m.currentState {
-	case "auth":
-		w, h, e := term.GetSize(int(os.Stdin.Fd()))
-		if e == nil {
-			return lipgloss.Place(
-				w,
-				h,
-				lipgloss.Center,
-				lipgloss.Center,
-				lipgloss.NewStyle().
-					Foreground(lipgloss.Color("0")).
-					Background(lipgloss.Color("#4F9852")).
-					Padding(1, 2, 1, 2).
-					BorderStyle(lipgloss.RoundedBorder()).
-					Render(m.input),
-			)
-		}
+	w, h, e := term.GetSize(int(os.Stdin.Fd()))
+	// switch m.currentState {
+	// case "auth":
+	// 	w, h, e := term.GetSize(int(os.Stdin.Fd()))
+	// 	if e == nil {
+	// 		return lipgloss.Place(
+	// 			w,
+	// 			h,
+	// 			lipgloss.Center,
+	// 			lipgloss.Center,
+	// 			lipgloss.NewStyle().
+	// 				Foreground(lipgloss.Color("0")).
+	// 				Background(lipgloss.Color("#4F9852")).
+	// 				Padding(1, 2, 1, 2).
+	// 				BorderStyle(lipgloss.RoundedBorder()).
+	// 				Render(m.input),
+	// 		)
+	// 	}
+	// }
+	if e == nil {
+		return lipgloss.Place(w, h-1, lipgloss.Left, lipgloss.Bottom, m.input.View())
 	}
 	return ""
 }
