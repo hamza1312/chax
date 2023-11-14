@@ -64,8 +64,10 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) addChar(char string) model {
-	m.input = m.input[:m.cursor] + char + m.input[m.cursor:]
-	m.cursor++
+	if (len(char) == 1) {
+		m.input = m.input[:m.cursor] + char + m.input[m.cursor:]
+		m.cursor++
+	}
 	return m
 }
 
